@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pencarian Peserta (Google Sheets)</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background-color: #f4f7f6; padding: 20px; max-width: 900px; margin: 0 auto; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
+    .search-box { 
+      width: 100%; 
+      padding: 14px 20px; 
+      font-size: 16px; 
+      border: 2px solid #3498db; 
+      border-radius: 8px; 
+      outline: none; 
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .search-box:focus { border-color: #2980b9; }
+    .table-container { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 18px; text-align: left; }
+    th { background-color: #3498db; color: white; font-weight: 600; }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    tr:hover { background-color: #eef2f5; }
+    .status-msg { text-align: center; color: #7f8c8d; padding: 20px; background: white; border-radius: 8px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>🔍 Pencarian Data Peserta</h1>
+  
+  <input type="text" id="searchInput" class="search-box" placeholder="Cari nama, asal sekolah, atau bidang..." onkeyup="filterData()">
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Asal Sekolah</th>
+          <th>Bidang</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Data dari Google Sheets akan dimuat di sini -->
+      </tbody>
+    </table>
+  </div>
+
+  <div id="statusMsg" class="status-msg">Memuat data peserta...</div>
+
+  <script>
+    // GANTI LINK DI BAWAH DENGAN URL GOOGLE APPS SCRIPT ANDA
+    const SCRIPT_URL = "PASTE_URL_APPS_SCRIPT_DI_SINI";
+
+    let allParticipants = [];
+
+    // Mengambil data dari Google Sheets saat halaman dimuat
+    async function loadData() {
+      try {
+        const response = await fetch(SCRIPT_URL);
+        allParticipants = await response.json();
+        renderTable(allParticipants);
+        document.getElementById("statusMsg").style.display = "none";
+      } catch (error) {
+        document.getElementById("statusMsg").textContent = "Gagal memuat data dari Google Sheets.";
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    // Menampilkan data ke dalam tabel
+    function renderTable(data) {
+      const tableBody = document.getElementById("tableBody");
+      tableBody.innerHTML = "";
+
+      if (data.length === 0) {
+        document.getElementById("statusMsg").style.display = "block";
+        document.getElementById("statusMsg").textContent = "Data peserta tidak ditemukan.";
+        return;
+      }
+
+      data.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item["Nama"] || '-'}</td>
+          <td>${item["Asal Sekolah"] || '-'}</td>
+          <td>${item["Bidang"] || '-'}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Fungsi pencarian instan
+    function filterData() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allParticipants.filter(item => {
+        const nama = (item["Nama"] || "").toString().toLowerCase();
+        const sekolah = (item["Asal Sekolah"] || "").toString().toLowerCase();
+        const bidang = (item["Bidang"] || "").toString().toLowerCase();
+        return nama.includes(input) || sekolah.includes(input) || bidang.includes(input);
+      });
+
+      renderTable(filtered);
+      if (filtered.length > 0) {
+        document.getElementById("statusMsg").style.display = "none";
+      }
+    }
+
+    // Jalankan fungsi loadData saat pertama kali dibuka
+    loadData();
+  </script>
+
+</body>
+</html>
