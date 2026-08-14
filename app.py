@@ -11,9 +11,10 @@ st.title("🔍 Sistem Cek Data Peserta Ringkas")
 @st.cache_data
 def load_all_data():
     try:
-        df_sd = pd.read_excel("sd.xlsx")
-        df_smp = pd.read_excel("smp.xlsx")
-        df_sma = pd.read_excel("sma.xlsx")
+        # Nama file disesuaikan persis dengan file di GitHub
+        df_sd = pd.read_excel("DATA SSO SD 2026.xlsx")
+        df_smp = pd.read_excel("DATA SSO SMP 2026.xlsx")
+        df_sma = pd.read_excel("DATA SSO SMA 2026.xlsx")
 
         # Menggabungkan ketiga dataframe
         df_combined = pd.concat([df_sd, df_smp, df_sma], ignore_index=True)
@@ -24,7 +25,9 @@ def load_all_data():
 
         return df_combined
     except Exception as e:
-        st.error(f"Gagal membaca file Excel. Pastikan file ada di folder yang sama. Error: {e}")
+        st.error(
+            f"Gagal membaca file Excel. Pastikan file ada di folder yang sama. Error: {e}"
+        )
         return pd.DataFrame()
 
 
