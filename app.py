@@ -1,32 +1,28 @@
 import os
 import pandas as pd
+from PIL import Image
 import streamlit as st
 
 # 1. Konfigurasi Halaman Web & Tab Browser
 st.set_page_config(
-    page_title="Cek Data Peserta - Sisingamangaraja Science Olympiad",
+    page_title="Sisingamangaraja Science Olympiad",
     page_icon="🏆",
     layout="wide",
 )
 
-# 2. Custom CSS untuk Mempercantik & Merapikan Tampilan Web
+# 2. Custom CSS untuk Mempercantik Tampilan
 st.markdown(
     """
     <style>
-    /* Mengatur padding atas agar lebih rapat dan rapi */
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2rem !important;
     }
-    
-    /* Judul dan Subheader Styling Warna Merah Khas SSO */
     h2, h3 {
         color: #B71C1C !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-weight: 700 !important;
     }
-    
-    /* Mempercantik Card Tabel Data */
     .stDataFrame {
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -36,17 +32,29 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- 3. TAMPILKAN BANNER UTAMA ---
-# Nama file disesuaikan persis dengan file di GitHub Anda
-banner_filename = "OLIMPIADE ILMU SISINGAMANGARAJA (1).png"
+# --- 3. TAMPILKAN BANNER GAMBAR DENGAN NAMA SIMPEL ---
+banner_names = [
+    "banner.png",
+    "banner.jpg",
+    "OLIMPIADE ILMU SISINGAMANGARAJA (1).png",
+]
+banner_loaded = False
 
-if os.path.exists(banner_filename):
-    st.image(banner_filename, use_container_width=True)
-else:
-    st.title("🏆 SISINGAMANGARAJA SCIENCE OLYMPIAD")
+for b_name in banner_names:
+    if os.path.exists(b_name):
+        try:
+            image = Image.open(b_name)
+            st.image(image, use_container_width=True)
+            banner_loaded = True
+            break
+        except Exception:
+            pass
+
+if not banner_loaded:
+    st.info("💡 Gambar banner sedang dimuat/nama file disesuaikan.")
 
 st.markdown(
-    "<h3 style='text-align: center; margin-top: 15px; margin-bottom: 5px;'>🔍 SISTEM CEK DATA PESERTA</h3>",
+    "<h3 style='text-align: center; margin-top: 10px; margin-bottom: 5px;'>🔍 SISTEM CEK DATA PESERTA</h3>",
     unsafe_allow_html=True,
 )
 st.divider()
