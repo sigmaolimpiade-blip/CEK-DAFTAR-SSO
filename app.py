@@ -10,19 +10,29 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Custom CSS untuk Mempercantik Tampilan
+# 2. Custom CSS Perbaikan Padding (Agar Banner Tidak Terpotong di Atas)
 st.markdown(
     """
     <style>
+    /* Memberikan ruang atas yang pas agar gambar banner tidak tertutup/terpotong */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 3.5rem !important;
         padding-bottom: 2rem !important;
     }
+    
+    /* Memastikan gambar banner tampil utuh dan rapi */
+    div[data-testid="stImage"] img {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Judul dan Subheader Styling Warna Merah Khas SSO */
     h2, h3 {
         color: #B71C1C !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-weight: 700 !important;
     }
+    
     .stDataFrame {
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -32,7 +42,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- 3. TAMPILKAN BANNER GAMBAR DENGAN NAMA SIMPEL ---
+# --- 3. TAMPILKAN BANNER GAMBAR ---
 banner_names = [
     "banner.png",
     "banner.jpg",
@@ -54,7 +64,7 @@ if not banner_loaded:
     st.info("💡 Gambar banner sedang dimuat/nama file disesuaikan.")
 
 st.markdown(
-    "<h3 style='text-align: center; margin-top: 10px; margin-bottom: 5px;'>🔍 SISTEM CEK DATA PESERTA</h3>",
+    "<h3 style='text-align: center; margin-top: 15px; margin-bottom: 5px;'>🔍 SISTEM CEK DATA PESERTA</h3>",
     unsafe_allow_html=True,
 )
 st.divider()
