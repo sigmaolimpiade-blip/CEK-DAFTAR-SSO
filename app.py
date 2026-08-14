@@ -11,15 +11,25 @@ st.title("🔍 Sistem Cek Data Peserta Ringkas")
 @st.cache_data
 def load_all_data():
     try:
-        # Nama file disesuaikan persis dengan file di GitHub
+        # Load masing-masing file
         df_sd = pd.read_excel("DATA SSO SD 2026.xlsx")
         df_smp = pd.read_excel("DATA SSO SMP 2026.xlsx")
         df_sma = pd.read_excel("DATA SSO SMA 2026.xlsx")
 
+        # Bersihkan spasi di nama header/kolom (mencegah KeyError)
+        df_sd.columns = df_sd.columns.astype(str).str.strip()
+        df_smp.columns = df_smp.columns.astype(str).str.strip()
+        df_sma.columns = df_sma.columns.astype(str).str.strip()
+
+        # Tambahkan kolom penanda Jenjang Sekolah
+        df_sd["Jenjang Sekolah"] = "SD/MI"
+        df_smp["Jenjang Sekolah"] = "SMP/MTS"
+        df_sma["Jenjang Sekolah"] = "SMK/SMA/MA"
+
         # Menggabungkan ketiga dataframe
         df_combined = pd.concat([df_sd, df_smp, df_sma], ignore_index=True)
 
-        # Membersihkan spasi berlebih pada string
+        # Membersihkan spasi berlebih pada isi data
         for col in df_combined.select_dtypes(include="object").columns:
             df_combined[col] = df_combined[col].astype(str).str.strip()
 
@@ -40,53 +50,58 @@ if not df.empty:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        # Pilihan Asal Sekolah (Dropdown)
-        daftar_sekolah = ["-- Semua Sekolah --"] + sorted(
-            df["Asal Sekolah"].dropna().unique().tolist()
-        )
-        selected_sekolah = st.selectbox("Asal Sekolah:", daftar_sekolah)
+        # Dropdown 3 pilihan Jenjang Sekolah
+        pilihan_jenjang = ["-- Semua Jenjang --", "SD/MI", "SMP/MTS", "SMK/SMA/MA"]
+        selected_jenjang = st.selectbox("Jenjang / Tingkat Sekolah:", pilihan_jenjang)
 
     with col2:
         # Input Nama
         input_nama = st.text_input("Nama:")
 
     with col3:
-        # Input atau Dropdown Bidang
-        daftar_bidang = ["-- Semua Bidang --"] + sorted(
-            df["Bidang"].dropna().unique().tolist()
-        )
+        # Dropdown Bidang
+        if "Bidang" in df.columns:
+            daftar_bidang = ["-- Semua Bidang --"] + sorted(
+                [b for b in df["Bidang"].dropna().unique().tolist() if b != "nan"]
+            )
+        else:
+            daftar_bidang = ["-- Semua Bidang --"]
         selected_bidang = st.selectbox("Bidang:", daftar_bidang)
 
     # --- PROSES FILTER DATA ---
     filtered_df = df.copy()
 
-    # Filter berdasarkan Asal Sekolah jika dipilih
-    if selected_sekolah != "-- Semua Sekolah --":
+    # Filter berdasarkan Jenjang Sekolah
+    if selected_jenjang != "-- Semua Jenjang --":
         filtered_df = filtered_df[
-            filtered_df["Asal Sekolah"] == selected_sekolah
+            filtered_df["Jenjang Sekolah"] == selected_jenjang
         ]
 
     # Filter berdasarkan Nama (tidak peka huruf besar/kecil)
-    if input_nama:
+    if input_nama and "Nama" in filtered_df.columns:
         filtered_df = filtered_df[
             filtered_df["Nama"].str.contains(input_nama, case=False, na=False)
         ]
 
-    # Filter berdasarkan Bidang jika dipilih
-    if selected_bidang != "-- Semua Bidang --":
+    # Filter berdasarkan Bidang
+    if selected_bidang != "-- Semua Bidang --" and "Bidang" in filtered_df.columns:
         filtered_df = filtered_df[filtered_df["Bidang"] == selected_bidang]
 
     # --- TAMPILKAN HASIL ---
     st.divider()
     st.subheader("Hasil Pencarian")
 
-    # Kolom yang ingin ditampilkan saja
+    # Kolom yang ingin ditampilkan
     target_columns = ["Nama", "Asal Sekolah", "Bidang", "Nomor Peserta", "Ruang"]
 
+    # Menyesuaikan kolom agar tidak terjadi KeyError jika ada nama kolom yang berbeda
+    available_columns = [
+        col for col in target_columns if col in filtered_df.columns
+    ]
+
     if not filtered_df.empty:
-        # Menampilkan tabel hasil
         st.dataframe(
-            filtered_df[target_columns],
+            filtered_df[available_columns],
             use_container_width=True,
             hide_index=True,
         )
