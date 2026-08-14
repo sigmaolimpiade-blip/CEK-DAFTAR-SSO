@@ -4,7 +4,7 @@ import streamlit as st
 # Set Konfigurasi Halaman Web
 st.set_page_config(page_title="Pencarian Data Peserta", layout="wide")
 
-st.title("🔍 Sistem Cek Data Peserta Ringkas")
+st.title("🔍 Cek Data Peserta SSO 2026")
 
 
 # Fungsi untuk menyesuaikan nama kolom secara otomatis dari Excel
