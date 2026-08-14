@@ -1,57 +1,58 @@
+import os
 import pandas as pd
 import streamlit as st
 
-# Set Konfigurasi Halaman Web & Icon Browser
+# 1. Konfigurasi Halaman Web & Tab Browser
 st.set_page_config(
     page_title="Cek Data Peserta - Sisingamangaraja Science Olympiad",
     page_icon="🏆",
     layout="wide",
 )
 
-# Custom CSS untuk Desain Bergaya (Tema Merah & Elegan)
+# 2. Custom CSS untuk Mempercantik & Merapikan Tampilan Web
 st.markdown(
     """
     <style>
-    /* Mengubah warna font judul & subheader */
-    h1, h2, h3 {
+    /* Mengatur padding atas agar lebih rapat dan rapi */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    /* Judul dan Subheader Styling Warna Merah Khas SSO */
+    h2, h3 {
         color: #B71C1C !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: 700 !important;
     }
     
-    /* Card/Box Filter Background */
-    div[data-testid="stForm"] {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    
-    /* Desain Tabel Data */
+    /* Mempercantik Card Tabel Data */
     .stDataFrame {
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# --- 1. TAMPILKAN BANNER HEADER ---
-try:
-    # Memuat gambar header dari GitHub
-    st.image("header.jpg", use_container_width=True)
-except Exception:
-    # Fallback jika gambar belum terupload
+# --- 3. TAMPILKAN BANNER UTAMA ---
+# Nama file disesuaikan persis dengan file di GitHub Anda
+banner_filename = "OLIMPIADE ILMU SISINGAMANGARAJA (1).png"
+
+if os.path.exists(banner_filename):
+    st.image(banner_filename, use_container_width=True)
+else:
     st.title("🏆 SISINGAMANGARAJA SCIENCE OLYMPIAD")
 
 st.markdown(
-    "<h2 style='text-align: center;'>🔍 SISTEM CEK DATA PESERTA</h2>",
+    "<h3 style='text-align: center; margin-top: 15px; margin-bottom: 5px;'>🔍 SISTEM CEK DATA PESERTA</h3>",
     unsafe_allow_html=True,
 )
 st.divider()
 
 
-# --- 2. FUNGSI STANDARISASI KOLOM ---
+# --- 4. FUNGSI STANDARISASI KOLOM ---
 def standardize_columns(df):
     column_mapping = {}
     for col in df.columns:
@@ -70,11 +71,11 @@ def standardize_columns(df):
     return df.rename(columns=column_mapping)
 
 
-# --- 3. LOAD DATA DARI EXCEL ---
+# --- 5. LOAD DATA DARI EXCEL ---
 @st.cache_data
 def load_all_data():
     try:
-        # PENTING: dtype=str memastikan nomor peserta 0001 tidak terpotong
+        # PENTING: dtype=str memelihara format 0001, 0002
         df_sd = pd.read_excel("DATA SSO SD 2026.xlsx", dtype=str)
         df_smp = pd.read_excel("DATA SSO SMP 2026.xlsx", dtype=str)
         df_sma = pd.read_excel("DATA SSO SMA 2026.xlsx", dtype=str)
@@ -89,10 +90,10 @@ def load_all_data():
         df_smp["Jenjang Sekolah"] = "SMP/MTS"
         df_sma["Jenjang Sekolah"] = "SMK/SMA/MA"
 
-        # Gabungkan
+        # Gabungkan Data
         df_combined = pd.concat([df_sd, df_smp, df_sma], ignore_index=True)
 
-        # Bersihkan Spasi & Blank
+        # Bersihkan Spasi & Kosong
         for col in df_combined.columns:
             df_combined[col] = (
                 df_combined[col].fillna("").astype(str).str.strip()
@@ -101,14 +102,14 @@ def load_all_data():
 
         return df_combined
     except Exception as e:
-        st.error(f"Gagal membaca file data. Pastikan file Excel sesuai: {e}")
+        st.error(f"Gagal membaca file data. Pastikan nama file Excel sesuai: {e}")
         return pd.DataFrame()
 
 
 df = load_all_data()
 
 if not df.empty:
-    # --- 4. FORM FILTER ---
+    # --- 6. FORM FILTER PENCARIAN ---
     st.subheader("📋 Form Pencarian Peserta")
 
     col1, col2, col3 = st.columns(3)
@@ -142,7 +143,7 @@ if not df.empty:
             daftar_bidang = ["-- Semua Bidang --"]
         selected_bidang = st.selectbox("Pilih Bidang Lomba:", daftar_bidang)
 
-    # --- 5. EKSEKUSI FILTER ---
+    # --- 7. PROSES EKSEKUSI FILTER ---
     filtered_df = df.copy()
 
     if selected_jenjang != "-- Semua Jenjang --":
@@ -158,7 +159,7 @@ if not df.empty:
     if selected_bidang != "-- Semua Bidang --" and "Bidang" in filtered_df.columns:
         filtered_df = filtered_df[filtered_df["Bidang"] == selected_bidang]
 
-    # --- 6. HASIL PENCARIAN ---
+    # --- 8. TAMPILAN HASIL PENCARIAN ---
     st.divider()
     st.subheader("📌 Hasil Pencarian")
 
@@ -176,5 +177,5 @@ if not df.empty:
         st.success(f"🎉 Ditemukan **{len(filtered_df)}** data peserta.")
     else:
         st.warning(
-            "⚠️ Data tidak ditemukan. Silakan periksa kembali Nama, Jenjang, atau Bidang Lomba."
+            "⚠️ Data tidak ditemukan. Silakan periksa kembali kata kunci Nama, Jenjang, atau Bidang Lomba."
         )
