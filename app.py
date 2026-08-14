@@ -4,7 +4,7 @@ import streamlit as st
 # Set Konfigurasi Halaman Web
 st.set_page_config(page_title="Pencarian Data Peserta", layout="wide")
 
-st.title("🔍 Cek Data Peserta SSO 2026")
+st.title("🔍 Sistem Cek Data Peserta Ringkas")
 
 
 # Fungsi untuk menyesuaikan nama kolom secara otomatis dari Excel
@@ -30,10 +30,10 @@ def standardize_columns(df):
 @st.cache_data
 def load_all_data():
     try:
-        # Load masing-masing file Excel
-        df_sd = pd.read_excel("DATA SSO SD 2026.xlsx")
-        df_smp = pd.read_excel("DATA SSO SMP 2026.xlsx")
-        df_sma = pd.read_excel("DATA SSO SMA 2026.xlsx")
+        # PENTING: dtype=str memastikan angka 0001 TIDAK berubah menjadi 1
+        df_sd = pd.read_excel("DATA SSO SD 2026.xlsx", dtype=str)
+        df_smp = pd.read_excel("DATA SSO SMP 2026.xlsx", dtype=str)
+        df_sma = pd.read_excel("DATA SSO SMA 2026.xlsx", dtype=str)
 
         # Otomatis deteksi & seragamkan nama kolom
         df_sd = standardize_columns(df_sd)
@@ -48,9 +48,12 @@ def load_all_data():
         # Menggabungkan ketiga dataframe
         df_combined = pd.concat([df_sd, df_smp, df_sma], ignore_index=True)
 
-        # Membersihkan spasi berlebih pada isi data
-        for col in df_combined.select_dtypes(include="object").columns:
-            df_combined[col] = df_combined[col].astype(str).str.strip()
+        # Membersihkan spasi berlebih & menangani nilai kosong (NaN)
+        for col in df_combined.columns:
+            df_combined[col] = (
+                df_combined[col].fillna("").astype(str).str.strip()
+            )
+            df_combined[col] = df_combined[col].replace("nan", "")
 
         return df_combined
     except Exception as e:
@@ -87,8 +90,8 @@ if not df.empty:
             daftar_bidang = ["-- Semua Bidang --"] + sorted(
                 [
                     b
-                    for b in df["Bidang"].dropna().unique().tolist()
-                    if b not in ["nan", "None"]
+                    for b in df["Bidang"].unique().tolist()
+                    if b and b not in ["nan", "None"]
                 ]
             )
         else:
@@ -125,6 +128,7 @@ if not df.empty:
     ]
 
     if not filtered_df.empty:
+        # Menampilkan data dengan format string murni agar nomor peserta tidak terpotong
         st.dataframe(
             filtered_df[available_columns],
             use_container_width=True,
