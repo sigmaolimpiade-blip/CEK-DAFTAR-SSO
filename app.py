@@ -10,23 +10,23 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Custom CSS Perbaikan Padding (Agar Banner Tidak Terpotong di Atas)
+# 2. Custom CSS Perbaikan Layout & Tampilan
 st.markdown(
     """
     <style>
-    /* Memberikan ruang atas yang pas agar gambar banner tidak tertutup/terpotong */
+    /* Memberikan ruang atas yang pas agar banner tidak terpotong */
     .block-container {
         padding-top: 3.5rem !important;
         padding-bottom: 2rem !important;
     }
     
-    /* Memastikan gambar banner tampil utuh dan rapi */
+    /* Memastikan gambar banner tampil utuh */
     div[data-testid="stImage"] img {
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     
-    /* Judul dan Subheader Styling Warna Merah Khas SSO */
+    /* Judul dan Subheader Warna Merah Khas SSO */
     h2, h3 {
         color: #B71C1C !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -161,39 +161,64 @@ if not df.empty:
             daftar_bidang = ["-- Semua Bidang --"]
         selected_bidang = st.selectbox("Pilih Bidang Lomba:", daftar_bidang)
 
-    # --- 7. PROSES EKSEKUSI FILTER ---
-    filtered_df = df.copy()
+    # --- 7. DETEKSI STATUS PENCARIAN ---
+    # Hasil HANYA akan diproses jika minimal ada 1 filter yang dipilih/diketik
+    is_searching = (
+        selected_jenjang != "-- Semua Jenjang --"
+        or len(input_nama.strip()) > 0
+        or selected_bidang != "-- Semua Bidang --"
+    )
 
-    if selected_jenjang != "-- Semua Jenjang --":
-        filtered_df = filtered_df[
-            filtered_df["Jenjang Sekolah"] == selected_jenjang
+    if is_searching:
+        filtered_df = df.copy()
+
+        if selected_jenjang != "-- Semua Jenjang --":
+            filtered_df = filtered_df[
+                filtered_df["Jenjang Sekolah"] == selected_jenjang
+            ]
+
+        if input_nama and "Nama" in filtered_df.columns:
+            filtered_df = filtered_df[
+                filtered_df["Nama"].str.contains(
+                    input_nama, case=False, na=False
+                )
+            ]
+
+        if (
+            selected_bidang != "-- Semua Bidang --"
+            and "Bidang" in filtered_df.columns
+        ):
+            filtered_df = filtered_df[filtered_df["Bidang"] == selected_bidang]
+
+        # --- 8. TAMPILAN HASIL PENCARIAN ---
+        st.divider()
+        st.subheader("📌 Hasil Pencarian")
+
+        target_columns = [
+            "Nama",
+            "Asal Sekolah",
+            "Bidang",
+            "Nomor Peserta",
+            "Ruang",
+        ]
+        available_columns = [
+            col for col in target_columns if col in filtered_df.columns
         ]
 
-    if input_nama and "Nama" in filtered_df.columns:
-        filtered_df = filtered_df[
-            filtered_df["Nama"].str.contains(input_nama, case=False, na=False)
-        ]
-
-    if selected_bidang != "-- Semua Bidang --" and "Bidang" in filtered_df.columns:
-        filtered_df = filtered_df[filtered_df["Bidang"] == selected_bidang]
-
-    # --- 8. TAMPILAN HASIL PENCARIAN ---
-    st.divider()
-    st.subheader("📌 Hasil Pencarian")
-
-    target_columns = ["Nama", "Asal Sekolah", "Bidang", "Nomor Peserta", "Ruang"]
-    available_columns = [
-        col for col in target_columns if col in filtered_df.columns
-    ]
-
-    if not filtered_df.empty:
-        st.dataframe(
-            filtered_df[available_columns],
-            use_container_width=True,
-            hide_index=True,
-        )
-        st.success(f"🎉 Ditemukan **{len(filtered_df)}** data peserta.")
+        if not filtered_df.empty:
+            st.dataframe(
+                filtered_df[available_columns],
+                use_container_width=True,
+                hide_index=True,
+            )
+            st.success(f"🎉 Ditemukan **{len(filtered_df)}** data peserta.")
+        else:
+            st.warning(
+                "⚠️ Data tidak ditemukan. Silakan periksa kembali kata kunci Nama, Jenjang, atau Bidang Lomba."
+            )
     else:
-        st.warning(
-            "⚠️ Data tidak ditemukan. Silakan periksa kembali kata kunci Nama, Jenjang, atau Bidang Lomba."
+        # Tampilan pesan bantuan saat pertama kali membuka web
+        st.divider()
+        st.info(
+            "💡 **Petunjuk:** Silakan pilih Tingkat Sekolah, ketik Nama Peserta, atau pilih Bidang Lomba di atas untuk menampilkan data peserta."
         )
