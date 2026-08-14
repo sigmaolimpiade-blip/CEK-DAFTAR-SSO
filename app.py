@@ -1,13 +1,57 @@
 import pandas as pd
 import streamlit as st
 
-# Set Konfigurasi Halaman Web
-st.set_page_config(page_title="Pencarian Data Peserta", layout="wide")
+# Set Konfigurasi Halaman Web & Icon Browser
+st.set_page_config(
+    page_title="Cek Data Peserta - Sisingamangaraja Science Olympiad",
+    page_icon="🏆",
+    layout="wide",
+)
 
-st.title("🔍 Sistem Cek Data Peserta Ringkas")
+# Custom CSS untuk Desain Bergaya (Tema Merah & Elegan)
+st.markdown(
+    """
+    <style>
+    /* Mengubah warna font judul & subheader */
+    h1, h2, h3 {
+        color: #B71C1C !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Card/Box Filter Background */
+    div[data-testid="stForm"] {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* Desain Tabel Data */
+    .stDataFrame {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
+# --- 1. TAMPILKAN BANNER HEADER ---
+try:
+    # Memuat gambar header dari GitHub
+    st.image("header.jpg", use_container_width=True)
+except Exception:
+    # Fallback jika gambar belum terupload
+    st.title("🏆 SISINGAMANGARAJA SCIENCE OLYMPIAD")
+
+st.markdown(
+    "<h2 style='text-align: center;'>🔍 SISTEM CEK DATA PESERTA</h2>",
+    unsafe_allow_html=True,
+)
+st.divider()
 
 
-# Fungsi untuk menyesuaikan nama kolom secara otomatis dari Excel
+# --- 2. FUNGSI STANDARISASI KOLOM ---
 def standardize_columns(df):
     column_mapping = {}
     for col in df.columns:
@@ -26,29 +70,29 @@ def standardize_columns(df):
     return df.rename(columns=column_mapping)
 
 
-# Load & Gabungkan Data dari 3 File Excel
+# --- 3. LOAD DATA DARI EXCEL ---
 @st.cache_data
 def load_all_data():
     try:
-        # PENTING: dtype=str memastikan angka 0001 TIDAK berubah menjadi 1
+        # PENTING: dtype=str memastikan nomor peserta 0001 tidak terpotong
         df_sd = pd.read_excel("DATA SSO SD 2026.xlsx", dtype=str)
         df_smp = pd.read_excel("DATA SSO SMP 2026.xlsx", dtype=str)
         df_sma = pd.read_excel("DATA SSO SMA 2026.xlsx", dtype=str)
 
-        # Otomatis deteksi & seragamkan nama kolom
+        # Standarisasi Kolom
         df_sd = standardize_columns(df_sd)
         df_smp = standardize_columns(df_smp)
         df_sma = standardize_columns(df_sma)
 
-        # Tambahkan kolom penanda Jenjang Sekolah
+        # Penanda Jenjang
         df_sd["Jenjang Sekolah"] = "SD/MI"
         df_smp["Jenjang Sekolah"] = "SMP/MTS"
         df_sma["Jenjang Sekolah"] = "SMK/SMA/MA"
 
-        # Menggabungkan ketiga dataframe
+        # Gabungkan
         df_combined = pd.concat([df_sd, df_smp, df_sma], ignore_index=True)
 
-        # Membersihkan spasi berlebih & menangani nilai kosong (NaN)
+        # Bersihkan Spasi & Blank
         for col in df_combined.columns:
             df_combined[col] = (
                 df_combined[col].fillna("").astype(str).str.strip()
@@ -57,17 +101,15 @@ def load_all_data():
 
         return df_combined
     except Exception as e:
-        st.error(
-            f"Gagal membaca file Excel. Pastikan file ada di folder yang sama. Error: {e}"
-        )
+        st.error(f"Gagal membaca file data. Pastikan file Excel sesuai: {e}")
         return pd.DataFrame()
 
 
 df = load_all_data()
 
 if not df.empty:
-    # --- FORM INPUT & FILTER ---
-    st.subheader("Filter Pencarian")
+    # --- 4. FORM FILTER ---
+    st.subheader("📋 Form Pencarian Peserta")
 
     col1, col2, col3 = st.columns(3)
 
@@ -79,11 +121,13 @@ if not df.empty:
             "SMK/SMA/MA",
         ]
         selected_jenjang = st.selectbox(
-            "Jenjang / Tingkat Sekolah:", pilihan_jenjang
+            "Tingkat / Jenjang Sekolah:", pilihan_jenjang
         )
 
     with col2:
-        input_nama = st.text_input("Nama:")
+        input_nama = st.text_input(
+            "Ketik Nama Peserta:", placeholder="Contoh: Syakila..."
+        )
 
     with col3:
         if "Bidang" in df.columns:
@@ -96,44 +140,41 @@ if not df.empty:
             )
         else:
             daftar_bidang = ["-- Semua Bidang --"]
-        selected_bidang = st.selectbox("Bidang:", daftar_bidang)
+        selected_bidang = st.selectbox("Pilih Bidang Lomba:", daftar_bidang)
 
-    # --- PROSES FILTER DATA ---
+    # --- 5. EKSEKUSI FILTER ---
     filtered_df = df.copy()
 
-    # Filter berdasarkan Jenjang Sekolah
     if selected_jenjang != "-- Semua Jenjang --":
         filtered_df = filtered_df[
             filtered_df["Jenjang Sekolah"] == selected_jenjang
         ]
 
-    # Filter berdasarkan Nama
     if input_nama and "Nama" in filtered_df.columns:
         filtered_df = filtered_df[
             filtered_df["Nama"].str.contains(input_nama, case=False, na=False)
         ]
 
-    # Filter berdasarkan Bidang
     if selected_bidang != "-- Semua Bidang --" and "Bidang" in filtered_df.columns:
         filtered_df = filtered_df[filtered_df["Bidang"] == selected_bidang]
 
-    # --- TAMPILKAN HASIL ---
+    # --- 6. HASIL PENCARIAN ---
     st.divider()
-    st.subheader("Hasil Pencarian")
+    st.subheader("📌 Hasil Pencarian")
 
-    # Kolom utama yang wajib tampil
     target_columns = ["Nama", "Asal Sekolah", "Bidang", "Nomor Peserta", "Ruang"]
     available_columns = [
         col for col in target_columns if col in filtered_df.columns
     ]
 
     if not filtered_df.empty:
-        # Menampilkan data dengan format string murni agar nomor peserta tidak terpotong
         st.dataframe(
             filtered_df[available_columns],
             use_container_width=True,
             hide_index=True,
         )
-        st.success(f"Ditemukan **{len(filtered_df)}** data.")
+        st.success(f"🎉 Ditemukan **{len(filtered_df)}** data peserta.")
     else:
-        st.warning("Data tidak ditemukan. Silakan menyesuaikan kata kunci pencarian.")
+        st.warning(
+            "⚠️ Data tidak ditemukan. Silakan periksa kembali Nama, Jenjang, atau Bidang Lomba."
+        )
